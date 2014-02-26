@@ -20,9 +20,7 @@ class WorkBuffer {
 	
 	public function buffer(WorkItem $work){
 		$queue = $this->_prefixKey($work->getBufferName(), 'queue');
-		
-		$id = $work->getId();
-		$this->setWorkData($key, $id, $work);
+		$this->_setWorkItem($key, $work);
 		
 		//store data before queueing
 		return $this->_redis->lPush($queue, $id); //'beginning' of the list is actually the last to process
@@ -46,7 +44,44 @@ class WorkBuffer {
 		return false;
 	}
 	
-	private function _setWorkItem($key, $id, $work){
+	public function complete($work){
+		$key = $work->getBufferName();
+		$process = $this->_prefixKey($key, 'queue');
+		$this->_deleteWorkItem($key, $work);
+		return hDel($keyData, $id);
+	}
+	
+	public function complete($work){
+		$key = $work->getBufferName();
+		$process = $this->_prefixKey($key, 'queue');
+		
+		$this->_deleteWorkItem($work);
+		
+		return $this->redis->lRem($process, $work->getId());;
+	}
+	
+	public function release($work){
+		$key = $work->getBufferName();
+		$process = $this->_prefixKey($key, 'process');
+		$queue = $this->_prefixKey($key, 'fail');
+		
+		$this->redis->lRem($process, $work->getId());
+		return $this->redis->lPush($queue, $work->getId());
+	}
+	
+	
+	
+	public function fail($work){
+		$key = $work->getBufferName();
+		$process = $this->_prefixKey($key, 'process');
+		$fail = $this->_prefixKey($key, 'fail');
+		
+		$this->redis->lRem($process, $work->getId());
+		return $this->redis->lPush($fail, $work->getId());
+	}
+	
+	private function _setWorkItem($key, $work){
+		$id = $work->getId();
 		$keyData = $this->_prefixKey($key, 'data');
 		
 		$value = serialize($work);
@@ -55,5 +90,10 @@ class WorkBuffer {
 	private function _getWorkItem($key, $id){
 		$keyData = $this->_prefixKey($key, 'data');
 		return unserialize($this->_redis->hGet($keyData, $id));
+	}
+	
+	private function _deleteWorkItem($key, $work){
+		$keyData = $this->_prefixKey($key, 'data');
+		return $this->_redis->hDel($keyData, $work->getId());
 	}
 }
