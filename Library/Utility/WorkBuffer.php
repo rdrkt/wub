@@ -43,7 +43,7 @@ class WorkBuffer {
 		return false;
 	}
 	
-	public function complete($work){
+	public function complete(WorkItem $work){
 		$key = $work->getBufferName();
 		$process = $this->_prefixKey($key, 'process');
 		
@@ -52,7 +52,7 @@ class WorkBuffer {
 		return $this->redis->lRem($process, $work->getId());;
 	}
 	
-	public function release($work){
+	public function release(WorkItem $work){
 		$key = $work->getBufferName();
 		$process = $this->_prefixKey($key, 'process');
 		$queue = $this->_prefixKey($key, 'fail');
@@ -63,7 +63,7 @@ class WorkBuffer {
 	
 	
 	
-	public function fail($work){
+	public function fail(WorkItem $work){
 		$key = $work->getBufferName();
 		$process = $this->_prefixKey($key, 'process');
 		$fail = $this->_prefixKey($key, 'fail');
@@ -72,7 +72,7 @@ class WorkBuffer {
 		return $this->redis->lPush($fail, $work->getId());
 	}
 	
-	private function _setWorkItem($key, $work){
+	private function _setWorkItem($key, WorkItem $work){
 		$id = $work->getId();
 		$keyData = $this->_prefixKey($key, 'data');
 		
@@ -84,7 +84,7 @@ class WorkBuffer {
 		return unserialize($this->_redis->hGet($keyData, $id));
 	}
 	
-	private function _deleteWorkItem($key, $work){
+	private function _deleteWorkItem($key, WorkItem $work){
 		$keyData = $this->_prefixKey($key, 'data');
 		return $this->_redis->hDel($keyData, $work->getId());
 	}
