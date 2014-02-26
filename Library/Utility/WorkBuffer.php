@@ -46,14 +46,7 @@ class WorkBuffer {
 	
 	public function complete($work){
 		$key = $work->getBufferName();
-		$process = $this->_prefixKey($key, 'queue');
-		$this->_deleteWorkItem($key, $work);
-		return hDel($keyData, $id);
-	}
-	
-	public function complete($work){
-		$key = $work->getBufferName();
-		$process = $this->_prefixKey($key, 'queue');
+		$process = $this->_prefixKey($key, 'process');
 		
 		$this->_deleteWorkItem($work);
 		
