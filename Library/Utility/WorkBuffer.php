@@ -20,9 +20,8 @@ class WorkBuffer {
 	
 	public function buffer(WorkItem $work){
 		$queue = $this->_prefixKey($work->getBufferName(), 'queue');
-		$this->_setWorkItem($key, $work);
+		$this->_setWorkItem($key, $work);//store data before queueing
 		
-		//store data before queueing
 		return $this->_redis->lPush($queue, $id); //'beginning' of the list is actually the last to process
 	}
 	
