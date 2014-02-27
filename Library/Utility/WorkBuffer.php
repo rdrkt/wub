@@ -37,8 +37,11 @@ class WorkBuffer {
 		$id = $this->redis->bRPopLPush($queue, $process, $timeout);
 		
 		if($id){
+			$this->_addBuffer($key);
 			return $this->_getWorkItem($key, $id);
 		}
+		
+		$this->_removeBuffer($key);
 		
 		return false;
 	}
@@ -61,8 +64,6 @@ class WorkBuffer {
 		return $this->redis->lPush($queue, $work->getId());
 	}
 	
-	
-	
 	public function fail(WorkItem $work){
 		$key = $work->getBufferName();
 		$process = $this->_prefixKey($key, 'process');
@@ -70,6 +71,21 @@ class WorkBuffer {
 		
 		$this->redis->lRem($process, $work->getId());
 		return $this->redis->lPush($fail, $work->getId());
+	}
+	
+	public function getBuffers(){
+		$list = $this->_prefixKey('buffers');
+		return $this->_redis->sMembers($list);
+	}
+	
+	private function _addBuffer($key){
+		$list = $this->_prefixKey('buffers');
+		return $this->redis->sAdd($list, $key);
+	}
+	
+	private function _removeBuffer($key){
+		$list = $this->_prefixKey($key, 'buffers');
+		return $this->redis->sRem($list, $key);
 	}
 	
 	private function _setWorkItem($key, WorkItem $work){
