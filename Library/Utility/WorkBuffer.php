@@ -20,11 +20,17 @@ class WorkBuffer {
 	
 	public function save(WorkItem $work){
 		$queue = $this->_prefixKey($work->getBufferName(), 'queue');
+		$invalid = $this->_prefixKey($work->getBufferName(), 'invalid');
 		
 		$this->_addBuffer($work->getBufferName());
 		$this->_setWorkItem($work);//store data before queueing
 		
-		return $this->_redis->lPush($queue, $work->getId()); //'beginning' of the list is actually the last to process
+		if($work->isValid){
+			return $this->_redis->lPush($queue, $work->getId()); //'beginning' of the list is actually the last to process
+		}
+		
+		$this->_redis->lPush($invalid, $work->getId()); //in theory this shouldn't happen, but it does because people will try to insert trash jobs
+		return false;
 	}
 	
 	public function hasNext($key){
